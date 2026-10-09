@@ -25,7 +25,7 @@ def create_tables(connection):
              Simulation_Name TEXT NOT NULL,
              File_Path TEXT NOT NULL,
              UserID INTEGER NOT NULL,
-             FOREIGN KEY (UserID) REFERENCES Users(UserID);   
+             FOREIGN KEY (UserID) REFERENCES Users(UserID));   
              ''')
 
     connection.commit()
