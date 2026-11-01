@@ -62,7 +62,7 @@ def find_user(connection, email, password):
         return row[0], row[1] + ' ' + row[2], row[3]
     return None
 
-def check_email_exists(connection, email):
+def check_email_exist(connection, email):
     row = connection.execute(
         'SELECT Email FROM Users WHERE Email = ?', (email,))
     return row is not None

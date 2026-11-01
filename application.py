@@ -291,7 +291,7 @@ class Application:
                 return
 
             try:
-                found = check_email_exists(self.__db_connection, email)
+                found = check_email_exist(self.__db_connection, email)
             except Exception as error:
                 print('LOGIN ERROR:', repr(error))
                 error_label.config(text='Could not reach the database, please try again')
