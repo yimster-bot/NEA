@@ -1,4 +1,6 @@
 import sqlite3
+import hashlib
+from datetime import date
 
 DB_PATH = 'xg_calculator.db'
 
@@ -29,3 +31,42 @@ def create_tables(connection):
              ''')
 
     connection.commit()
+
+
+# ---------- passwords: never store the real password, only its hash ----------
+def hash_password(password):
+    return hashlib.sha256(password.encode('utf-8')).hexdigest()
+
+
+# ---------- the two database actions the login / create account screens need ----------
+def add_user(connection, first_name, last_name, organisation, email, password):
+    """Returns True if the account was created, False if that email is already registered."""
+    try:
+        connection.execute(
+            'INSERT INTO Users (First_Name, Last_Name, Organisation, Email, Password, Creation_Date) '
+            'VALUES (?, ?, ?, ?, ?, ?)',
+            (first_name, last_name, organisation, email.lower(), hash_password(password),
+             date.today().isoformat()))
+        connection.commit()
+        return True
+    except sqlite3.IntegrityError:
+        return False
+
+
+def find_user(connection, email, password):
+    """Returns (UserID, 'First Last', Email) if the details are right, otherwise None."""
+    row = connection.execute(
+        'SELECT UserID, First_Name, Last_Name, Email, Password FROM Users WHERE Email = ?',
+        (email.lower(),)).fetchone()
+    if row and hash_password(password) == row[4]:
+        return row[0], row[1] + ' ' + row[2], row[3]
+    return None
+
+def check_email_exists(connection, email):
+    row = connection.execute(
+        'SELECT Email FROM Users WHERE Email = ?', (email,))
+    return row is not None
+
+
+add_user(get_connection(), 'Chloe', 'Yim', 'KCS', 'hello@gmail.com', 'Hello123!')
+
