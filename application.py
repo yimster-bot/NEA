@@ -5,7 +5,7 @@ from user import User
 from pitch import Pitch
 from xg_model import xG_Model
 from feature_calculation import Feature_Calculation
-from db_setup import get_connection, find_user, add_user, check_email_exists
+from db_setup import get_connection, find_user, add_user, check_email_exist
 
 #Input validation for the login screen and create account screen are defined outside the class because it can be recycled for both pages
 EMAIL_PATTERN = re.compile(r"^[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}$")
@@ -121,6 +121,17 @@ class Application:
         box.get = lambda: '' if var.get()==placeholder else var.get()
         return box
 
+    def __set_window_size(self, width, height):
+        screen_width = self.__root.winfo_screenwidth()
+        screen_height = self.__root.winfo_screenheight()
+        # never makes the window bigger than the screen (leaves room for the menu bar and dock)
+        width = min(width, screen_width)
+        height = min(height, screen_height - 80)
+        # works out the position that puts the window in the middle of the screen
+        x = (screen_width - width) // 2
+        y = (screen_height - height) // 2
+        self.__root.geometry(f'{width}x{height}+{x}+{y}')
+
 
     # ---------- screens ----------
     def login_screen(self):
@@ -200,6 +211,7 @@ class Application:
         email_entry.focus_set()
 
     def create_account_screen(self):
+        #Sets frame for screen and clears all widgets from the screen
         self.clear_container()
         card = tk.Frame(self.__container, bg=self.__colour1)
         card.place(relx=0.5, rely=0.5, anchor='center', relwidth=0.8)
@@ -265,6 +277,7 @@ class Application:
                                fg=self.__error, wraplength=300, justify='left', anchor='w')
         error_label.pack(fill='x', pady=(0, 8))
 
+        #validation function for account creation screen
         def attempt_create_account():
             email = email_entry.get().strip()
             password = password_entry.get()
@@ -272,37 +285,52 @@ class Application:
             fname = fname_entry.get()
             lname = lname_entry.get()
             organisation = organisation_entry.get()
+
+            #check empty fields
             if not email or not password or not repassword or not fname or not lname:
                 error_label.config(text='Mandatory fields cannot be empty')
                 return
 
+            # checks for email errors, if there is an error, message is displayed accordingly
             email_problem = email_error(email)
             if email_problem:
                 error_label.config(text=email_problem)
                 return
 
+            # checks for password errors, if there is an error, message is displayed accordingly
             password_problem = password_error(password)
             if password_problem:
                 error_label.config(text=password_problem)
                 return
 
+            # checks if passwords match, if they do not match, message is displayed accordingly
             if password!=repassword:
                 error_label.config(text='Passwords not matching')
                 return
 
+            # checks for email clashes in the Users table in the database
             try:
                 found = check_email_exist(self.__db_connection, email)
+            # if there is a connection problem with the database, will display error message
             except Exception as error:
                 print('LOGIN ERROR:', repr(error))
                 error_label.config(text='Could not reach the database, please try again')
                 return
+            #if User matching email is found, display error message as one email address can only have one account
             if found:
                 error_label.config(text='This email already has an account')
                 return
 
+            #adds new user to the database
             add_user(self.__db_connection, fname, lname, organisation, email, password)
             refind = find_user(self.__db_connection, email, password)
+
+            #in case error occurs during adding user
+            if refind is None:
+                error_label.config(text='Account could not be created, please try again')
+                return
             user = User(*refind)  # User(userID, name, email) - matches user entry
+            #logs in with the new account automatically
             self.__current_user = user
             if self.__manager is not None:
                 self.__manager.current_user = user
@@ -319,10 +347,102 @@ class Application:
 
 
     def home_screen(self):
-        # placeholder so the loading screen has somewhere to go - replace later
         self.clear_container()
-        tk.Label(self.__container, text='Home page', font=(self.__font, 20, 'bold'),
-                 bg=self.__colour1, fg=self.__text).pack(expand=True)
+        self.__set_window_size(1280, 800)
+        expanded_width = 200
+        collapsed_width = 56
+
+        sidebar = tk.Frame(self.__container, bg=self.__colour1, width=expanded_width,
+                           highlightthickness=1, highlightbackground=self.__border)
+        sidebar.pack(side='left', fill='y')
+        sidebar.pack_propagate(False)  # stops the sidebar shrinking to fit its contents, so the width set above is kept
+
+        main_content = tk.Frame(self.__container, bg=self.__colour1)
+        main_content.pack(side='right', fill='both', expand=True)
+
+        # sidebar state
+        is_expanded = True
+        nav_text_labels = []  # text next to each icon, hidden when the sidebar is collapsed
+
+        def toggle_sidebar(event=None):
+            nonlocal is_expanded
+            if is_expanded:
+                sidebar.configure(width=collapsed_width)
+                for label in nav_text_labels:
+                    label.pack_forget()
+            else:
+                sidebar.configure(width=expanded_width)
+                for label in nav_text_labels:
+                    label.pack(side='left', fill='x')
+            is_expanded = not is_expanded
+
+        # toggle button
+        toggle_button = tk.Label(sidebar, text='☰', font=(self.__font, 22, 'bold'), bg=self.__colour1,
+                                 fg=self.__colour2, cursor=self.__hand, width=2)
+        toggle_button.pack(anchor='w', padx=8, pady=(10, 16))
+        toggle_button.bind('<Button-1>', toggle_sidebar)
+        toggle_button.bind('<Enter>', lambda event: toggle_button.configure(fg=self.__colour2_dark))
+        toggle_button.bind('<Leave>', lambda event: toggle_button.configure(fg=self.__colour2))
+
+        # creates one sidebar button made of an icon and its text
+        def nav_item(icon, text, command):
+            item = tk.Frame(sidebar, bg=self.__colour1, cursor=self.__hand)
+            item.pack(fill='x', pady=2)
+            icon_label = tk.Label(item, text=icon, font=(self.__font, 18), bg=self.__colour1,
+                                  fg=self.__colour2, width=2)
+            icon_label.pack(side='left', padx=(8, 10), pady=8)
+            text_label = tk.Label(item, text=text, font=(self.__font, 13, 'bold'), bg=self.__colour1,
+                                  fg=self.__text, anchor='w')
+            text_label.pack(side='left', fill='x')
+            nav_text_labels.append(text_label)
+
+            parts = (item, icon_label, text_label)
+
+            def set_background(colour):
+                for part in parts:
+                    part.configure(bg=colour)
+
+            # binds every part so clicking or hovering anywhere on the button works
+            for part in parts:
+                part.bind('<Button-1>', lambda event: command())
+                part.bind('<Enter>', lambda event: set_background(self.__border))
+                part.bind('<Leave>', lambda event: set_background(self.__colour1))
+
+        nav_item('⌂', 'Home', self.home_screen)
+        nav_item('+', 'New Simulation', self.new_simulation_screen)
+        nav_item('⇄', 'Compare', self.comparison_screen)
+        nav_item('⚙', 'Settings', self.settings_screen)
+
+
+        recents=[]
+        tk.Label(self.__container, text='Home page', font=(self.__font, 24, 'bold'),
+                 bg=self.__colour1, fg=self.__colour2, anchor='w').pack(fill='x', padx=20, pady=(0, 4))
+        tk.Label(self.__container, text='Recently saved', font=(self.__font, 20),
+                 bg=self.__colour1, fg=self.__muted, anchor='w').pack(fill='x', padx=20, pady=(0, 12))
+        if len(recents) == 0:
+            tk.Label(self.__container, text='No recently saved simulations', font=(self.__font, 15),
+                     bg=self.__colour1, fg=self.__muted, anchor='w').pack(fill='x', padx=20, pady=(0, 12))
+        else:
+            for simulation_id, name, saved_date, best_xg, file_path in recents:
+                sim_box = tk.Frame(main_content, bg='white', highlightthickness=1,
+                                   highlightbackground=self.__border, cursor=self.__hand)
+                sim_box.pack(fill='x', padx=30, pady=(0, 10))
+                name_label = tk.Label(sim_box, text=name, font=(self.__font, 15, 'bold'), bg='white',
+                                      fg=self.__text, anchor='w')
+                name_label.pack(fill='x', padx=16, pady=(12, 2))
+                info_label = tk.Label(sim_box, text=f'Saved {saved_date}   ·   Best xG: {best_xg:.2f}',
+                                      font=(self.__font, 12), bg='white', fg=self.__muted, anchor='w')
+                info_label.pack(fill='x', padx=16, pady=(0, 12))
+                # binds every part of the box so clicking anywhere opens that simulation
+                for part in (sim_box, name_label, info_label):
+                    part.bind('<Button-1>', lambda event, path=file_path: self.results_screen(path))
+                    part.bind('<Enter>', lambda event, box=sim_box: box.configure(highlightbackground=self.__colour2))
+                    part.bind('<Leave>', lambda event, box=sim_box: box.configure(highlightbackground=self.__border))
+
+
+
+
+
 
     def new_simulation_screen(self):
         pass
@@ -347,9 +467,13 @@ class Application:
         #Draws a 270 degree arc inside the canvas to create the loading wheel graphic
         arc = wheel.create_arc(5, 5, 45, 45, start=0, extent=270, style='arc', outline=self.__colour2, width=5)
 
-        #label to display text to user, message varies as transitions from page to page varies
-        tk.Label(self.__container, text=message, font=(self.__font, 16),
-                 bg=self.__colour1, fg=self.__text).pack(expand=True)
+        # label to display text to user, message varies as transitions from page to page varies
+        message_label = tk.Label(self.__container, text=message, font=(self.__font, 16),
+                                 bg=self.__colour1, fg=self.__text, justify='center')
+        message_label.pack(expand=True, fill='x', padx=20)
+
+        # wraps the text to the label's current width, so it still fits when the window is resized
+        message_label.bind('<Configure>', lambda event: message_label.configure(wraplength=event.width))
 
         #calls to do the spinning wheel animation
         def spin(angle=0):

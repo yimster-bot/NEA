@@ -62,11 +62,30 @@ def find_user(connection, email, password):
         return row[0], row[1] + ' ' + row[2], row[3]
     return None
 
+
 def check_email_exist(connection, email):
     row = connection.execute(
-        'SELECT Email FROM Users WHERE Email = ?', (email,))
+        'SELECT Email FROM Users WHERE Email = ?', (email.lower(),)).fetchone()
     return row is not None
 
+def delete_user(connection, user_id):
+    """Deletes the user and their saved simulations. Returns True if a user was deleted."""
+    connection.execute('DELETE FROM Previous_Simulations WHERE UserID = ?', (user_id,))
+    cursor = connection.execute('DELETE FROM Users WHERE UserID = ?', (user_id,))
+    connection.commit()
+    return cursor.rowcount > 0
 
-add_user(get_connection(), 'Chloe', 'Yim', 'KCS', 'hello@gmail.com', 'Hello123!')
+def recent_sims(connection, user_id):
+    """Returns the user's 3 most recent simulations as (SimulationID, Simulation_Name, Date, Best_xG, File_Path)."""
+    return connection.execute(
+        'SELECT SimulationID, Simulation_Name, Date, Best_xG, File_Path FROM Previous_Simulations '
+        'WHERE UserID = ? ORDER BY Date DESC, SimulationID DESC LIMIT 3',
+        (user_id,)).fetchall()
+
+
+connection = get_connection()
+query = "INSERT INTO Previous_Simulations (SimulationID, Date, Best_xG, Simulation_Name, File_Path, UserID) VALUES (1, )"
+print(connection.execute('SELECT * FROM Users').fetchall())
+
+
 
