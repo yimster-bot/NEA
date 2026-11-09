@@ -414,7 +414,7 @@ class Application:
         nav_item('⚙', 'Settings', self.settings_screen)
 
         recents = recent_sims(self.__db_connection, self.__current_user.get_userID())
-        tk.Label(self.__container, text=' ', font=(self.__font, 5, 'bold'),
+        tk.Label(main_content, text=' ', font=(self.__font, 5, 'bold'),
                  bg=self.__colour1, fg=self.__colour2, anchor='w').pack(fill='x', padx=20)
         tk.Label(main_content, text='Home page', font=(self.__font, 24, 'bold'),
                  bg=self.__colour1, fg=self.__colour2, anchor='w').pack(fill='x', padx=20, pady=(0, 4))
@@ -426,17 +426,17 @@ class Application:
         else:
             recents_row = tk.Frame(main_content, bg=self.__colour1)
             recents_row.pack(fill='x', padx=30)
-            recents_row.columnconfigure((0,1,2), weight=1, uniform='recent')
+            recents_row.columnconfigure((0,1,2,3), weight=1, uniform='recent')
 
             for column, (simulation_id, name, saved_date, best_xg, file_path) in enumerate(recents):
                 sim_box = tk.Frame(recents_row, bg='white', highlightthickness=1,
                                    highlightbackground=self.__border, cursor=self.__hand)
-                sim_box.grid(row=0, column=column, padx=30, pady=(0, 10))
+                sim_box.grid(row=0, column=column, sticky='nsew', padx=(0 if column == 0 else 10), pady=(0, 10))
                 name_label = tk.Label(sim_box, text=name, font=(self.__font, 15, 'bold'), bg='white',
                                       fg=self.__text, anchor='w')
                 name_label.pack(fill='x', padx=16, pady=(12, 2))
-                info_label = tk.Label(sim_box, text=f'Saved {saved_date}   ·   Best xG: {best_xg:.2f}',
-                                      font=(self.__font, 12), bg='white', fg=self.__muted, anchor='w')
+                info_label = tk.Label(sim_box, text=f'Saved {saved_date}  ·  Best xG: {best_xg:.2f}',
+                                      font=(self.__font, 12), bg='white', fg=self.__muted, anchor='w', width=1)
                 info_label.pack(fill='x', padx=16, pady=(0, 12))
                 # binds every part of the box so clicking anywhere opens that simulation
                 for part in (sim_box, name_label, info_label):

@@ -79,7 +79,7 @@ def recent_sims(connection, user_id):
     """Returns the user's 3 most recent simulations as (SimulationID, Simulation_Name, Date, Best_xG, File_Path)."""
     return connection.execute(
         'SELECT SimulationID, Simulation_Name, Date, Best_xG, File_Path FROM Previous_Simulations '
-        'WHERE UserID = ? ORDER BY Date DESC, SimulationID DESC LIMIT 3',
+        'WHERE UserID = ? ORDER BY Date DESC, SimulationID DESC LIMIT 4',
         (user_id,)).fetchall()
 
 
