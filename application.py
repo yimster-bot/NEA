@@ -5,7 +5,7 @@ from user import User
 from pitch import Pitch
 from xg_model import xG_Model
 from feature_calculation import Feature_Calculation
-from db_setup import get_connection, find_user, add_user, check_email_exist
+from db_setup import get_connection, find_user, add_user, check_email_exist, recent_sims
 
 #Input validation for the login screen and create account screen are defined outside the class because it can be recycled for both pages
 EMAIL_PATTERN = re.compile(r"^[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}$")
@@ -413,8 +413,9 @@ class Application:
         nav_item('⇄', 'Compare', self.comparison_screen)
         nav_item('⚙', 'Settings', self.settings_screen)
 
-
-        recents=[]
+        recents = recent_sims(self.__db_connection, self.__current_user.get_userID())
+        tk.Label(self.__container, text=' ', font=(self.__font, 5, 'bold'),
+                 bg=self.__colour1, fg=self.__colour2, anchor='w').pack(fill='x', padx=20)
         tk.Label(self.__container, text='Home page', font=(self.__font, 24, 'bold'),
                  bg=self.__colour1, fg=self.__colour2, anchor='w').pack(fill='x', padx=20, pady=(0, 4))
         tk.Label(self.__container, text='Recently saved', font=(self.__font, 20),
@@ -423,10 +424,14 @@ class Application:
             tk.Label(self.__container, text='No recently saved simulations', font=(self.__font, 15),
                      bg=self.__colour1, fg=self.__muted, anchor='w').pack(fill='x', padx=20, pady=(0, 12))
         else:
-            for simulation_id, name, saved_date, best_xg, file_path in recents:
-                sim_box = tk.Frame(main_content, bg='white', highlightthickness=1,
+            recents_row = tk.Frame(main_content, bg=self.__colour1)
+            recents_row.pack(fill='x', padx=30)
+            recents_row.columnconfigure((0,1,2), weight=1, uniform='recent')
+
+            for column, (simulation_id, name, saved_date, best_xg, file_path) in enumerate(recents):
+                sim_box = tk.Frame(recents_row, bg='white', highlightthickness=1,
                                    highlightbackground=self.__border, cursor=self.__hand)
-                sim_box.pack(fill='x', padx=30, pady=(0, 10))
+                sim_box.grid(row=0, column=column, fill='x', padx=30, pady=(0, 10))
                 name_label = tk.Label(sim_box, text=name, font=(self.__font, 15, 'bold'), bg='white',
                                       fg=self.__text, anchor='w')
                 name_label.pack(fill='x', padx=16, pady=(12, 2))
