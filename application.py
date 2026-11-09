@@ -1,11 +1,12 @@
 import re
 import sys
 import tkinter as tk
+from tkinter import ttk
 from user import User
 from pitch import Pitch
 from xg_model import xG_Model
 from feature_calculation import Feature_Calculation
-from db_setup import get_connection, find_user, add_user, check_email_exist, recent_sims
+from db_setup import get_connection, find_user, add_user, check_email_exist, recent_sims, all_sims
 
 #Input validation for the login screen and create account screen are defined outside the class because it can be recycled for both pages
 EMAIL_PATTERN = re.compile(r"^[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}$")
@@ -408,10 +409,10 @@ class Application:
                 part.bind('<Enter>', lambda event: set_background(self.__border))
                 part.bind('<Leave>', lambda event: set_background(self.__colour1))
 
-        nav_item('⌂', 'Home', self.home_screen)
-        nav_item('+', 'New Simulation', self.new_simulation_screen)
-        nav_item('⇄', 'Compare', self.comparison_screen)
-        nav_item('⚙', 'Settings', self.settings_screen)
+        nav_item('⌂', 'Home', self.general_loading_screen('Loading home page', self.home_screen))
+        nav_item('+', 'New Simulation', self.general_loading_screen('Loading simulation creation page', self.new_simulation_screen))
+        nav_item('⇄', 'Compare', self.general_loading_screen('Loading comparison page', self.comparison_screen))
+        nav_item('⚙', 'Settings', self.general_loading_screen('Loading settings', self.settings_screen))
 
         recents = recent_sims(self.__db_connection, self.__current_user.get_userID())
         tk.Label(main_content, text=' ', font=(self.__font, 5, 'bold'),
@@ -444,19 +445,92 @@ class Application:
                     part.bind('<Enter>', lambda event, box=sim_box: box.configure(highlightbackground=self.__colour2))
                     part.bind('<Leave>', lambda event, box=sim_box: box.configure(highlightbackground=self.__border))
 
+        tk.Label(main_content, text='Files', font=(self.__font, 20),
+                 bg=self.__colour1, fg=self.__muted, anchor='w').pack(fill='x', padx=20, pady=(0, 12))
 
+        # styling for the table, so it matches the rest of the app
+        style = ttk.Style()
+        style.theme_use('clam')  # the default Mac theme ignores most colour settings
+        style.configure('Files.Treeview', background='white', fieldbackground='white',
+                        foreground=self.__text, rowheight=36, font=(self.__font, 13), borderwidth=0)
+        style.configure('Files.Treeview.Heading', background=self.__colour1, foreground=self.__muted,
+                        font=(self.__font, 12, 'bold'), relief='flat', padding=(8, 6))
+        style.map('Files.Treeview', background=[('selected', self.__border)],
+                  foreground=[('selected', self.__text)])
+        style.map('Files.Treeview.Heading', background=[('active', self.__border)])
 
+        # frame that holds the table and its scrollbar
+        files_frame = tk.Frame(main_content, bg='white', highlightthickness=1,
+                               highlightbackground=self.__border)
+        files_frame.pack(fill='both', expand=True, padx=20, pady=(0, 20))
 
+        columns = ('name', 'date', 'best_xg')
+        headings = {'name': 'Name', 'date': 'Date saved', 'best_xg': 'Best xG'}
+        files = ttk.Treeview(files_frame, columns=columns, show='headings',
+                             style='Files.Treeview', selectmode='browse')
+        files.column('name', anchor='w', width=400)
+        files.column('date', anchor='w', width=150, stretch=False)
+        files.column('best_xg', anchor='w', width=120, stretch=False)
+
+        scrollbar = ttk.Scrollbar(files_frame, orient='vertical', command=files.yview)
+        files.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side='right', fill='y')
+        files.pack(side='left', fill='both', expand=True)
+
+        # fills the table, remembering each row's file path so it can be opened
+        file_paths = {}
+        for simulation_id, name, saved_date, best_xg, file_path in all_sims(self.__db_connection,
+                                                                            self.__current_user.get_userID()):
+            row_id = files.insert('', 'end', values=(name, saved_date, f'{best_xg:.2f}'))
+            file_paths[row_id] = file_path
+
+        # sorts the table when a column heading is clicked; clicking again reverses the order
+        def sort_by(column, descending):
+            rows = [(files.set(row_id, column), row_id) for row_id in files.get_children()]
+            if column == 'best_xg':
+                rows.sort(key=lambda row: float(row[0]), reverse=descending)
+            else:
+                rows.sort(key=lambda row: row[0].lower(), reverse=descending)
+            for position, (value, row_id) in enumerate(rows):
+                files.move(row_id, '', position)
+            # shows an arrow on the sorted column only
+            for col in columns:
+                files.heading(col, text=headings[col])
+            files.heading(column, text=headings[column] + (' ▼' if descending else ' ▲'),
+                          command=lambda: sort_by(column, not descending))
+
+        for col in columns:
+            files.heading(col, text=headings[col], anchor='w',
+                          command=lambda col=col: sort_by(col, col != 'name'))
+        files.heading('date', text='Date saved ▼')  # table starts sorted newest first
+
+        # double click (or enter) opens the selected simulation, like OneDrive
+        def open_selected(event=None):
+            selected = files.selection()
+            if selected:
+                self.results_screen(file_paths[selected[0]])
+
+        files.bind('<Double-1>', open_selected)
+        files.bind('<Return>', open_selected)
 
 
     def new_simulation_screen(self):
-        pass
+        self.clear_container()
+        tk.Label(self.__container, text='Create simulation screen', font=(self.__font, 24, 'bold'),
+                 bg=self.__colour1, fg=self.__colour2).pack(pady=(0, 4))
+
 
     def results_screen(self):
-        pass
+        self.clear_container()
+        tk.Label(self.__container, text='Results screen', font=(self.__font, 24, 'bold'),
+                 bg=self.__colour1, fg=self.__colour2).pack(pady=(0, 4))
+
 
     def comparison_screen(self):
-        pass
+        self.clear_container()
+        tk.Label(self.__container, text='Comparison screen', font=(self.__font, 24, 'bold'),
+                 bg=self.__colour1, fg=self.__colour2).pack(pady=(0, 4))
+
 
     def split_results_screen(self):
         pass
@@ -497,7 +571,10 @@ class Application:
         pass
 
     def settings_screen(self):
-        pass
+        self.clear_container()
+        tk.Label(self.__container, text='Comparison screen', font=(self.__font, 24, 'bold'),
+                 bg=self.__colour1, fg=self.__colour2).pack(pady=(0, 4))
+
 
 
 app = Application()

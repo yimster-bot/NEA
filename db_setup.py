@@ -82,6 +82,13 @@ def recent_sims(connection, user_id):
         'WHERE UserID = ? ORDER BY Date DESC, SimulationID DESC LIMIT 4',
         (user_id,)).fetchall()
 
+def all_sims(connection, user_id):
+    """Returns all of the user's simulations, newest first, as (SimulationID, Simulation_Name, Date, Best_xG, File_Path)."""
+    return connection.execute(
+        'SELECT SimulationID, Simulation_Name, Date, Best_xG, File_Path FROM Previous_Simulations '
+        'WHERE UserID = ? ORDER BY Date DESC, SimulationID DESC',
+        (user_id,)).fetchall()
+
 
 connection = get_connection()
 
