@@ -434,10 +434,10 @@ class Application:
                 sim_box.grid(row=0, column=column, sticky='nsew', padx=(0 if column == 0 else 10, 0), pady=(0, 10))
                 name_label = tk.Label(sim_box, text=name, font=(self.__font, 15, 'bold'), bg='white',
                                       fg=self.__text, anchor='w')
-                name_label.pack(fill='x', padx=10, pady=(12, 2))
+                name_label.pack(fill='x', padx=9, pady=(12, 2))
                 info_label = tk.Label(sim_box, text=f'Saved {saved_date}  ·  Best xG: {best_xg:.2f}',
                                       font=(self.__font, 12), bg='white', fg=self.__muted, anchor='w', width=1)
-                info_label.pack(fill='x', padx=10, pady=(0, 12))
+                info_label.pack(fill='x', padx=9, pady=(0, 12))
                 # binds every part of the box so clicking anywhere opens that simulation
                 for part in (sim_box, name_label, info_label):
                     part.bind('<Button-1>', lambda event, path=file_path: self.results_screen(path))
