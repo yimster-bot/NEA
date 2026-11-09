@@ -425,13 +425,13 @@ class Application:
                      bg=self.__colour1, fg=self.__muted, anchor='w').pack(fill='x', padx=20, pady=(0, 12))
         else:
             recents_row = tk.Frame(main_content, bg=self.__colour1)
-            recents_row.pack(fill='x', padx=20)
+            recents_row.pack(fill='x', padx=15)
             recents_row.columnconfigure((0,1,2,3), weight=1, uniform='recent')
 
             for column, (simulation_id, name, saved_date, best_xg, file_path) in enumerate(recents):
                 sim_box = tk.Frame(recents_row, bg='white', highlightthickness=1,
                                    highlightbackground=self.__border, cursor=self.__hand)
-                sim_box.grid(row=0, column=column, sticky='nsew', padx=(0 if column == 0 else 10, 0), pady=(0, 10))
+                sim_box.grid(row=0, column=column, sticky='nsew', padx=5, pady=(0, 10))
                 name_label = tk.Label(sim_box, text=name, font=(self.__font, 15, 'bold'), bg='white',
                                       fg=self.__text, anchor='w')
                 name_label.pack(fill='x', padx=9, pady=(12, 2))
