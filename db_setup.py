@@ -84,8 +84,8 @@ def recent_sims(connection, user_id):
 
 
 connection = get_connection()
-query = "INSERT INTO Previous_Simulations (SimulationID, Date, Best_xG, Simulation_Name, File_Path, UserID) VALUES (1, )"
-print(connection.execute('SELECT * FROM Users').fetchall())
 
+print(connection.execute('SELECT * FROM Users').fetchall())
+print(connection.execute('SELECT * from Previous_Simulations order by date desc').fetchall())
 
 

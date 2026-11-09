@@ -416,9 +416,9 @@ class Application:
         recents = recent_sims(self.__db_connection, self.__current_user.get_userID())
         tk.Label(self.__container, text=' ', font=(self.__font, 5, 'bold'),
                  bg=self.__colour1, fg=self.__colour2, anchor='w').pack(fill='x', padx=20)
-        tk.Label(self.__container, text='Home page', font=(self.__font, 24, 'bold'),
+        tk.Label(main_content, text='Home page', font=(self.__font, 24, 'bold'),
                  bg=self.__colour1, fg=self.__colour2, anchor='w').pack(fill='x', padx=20, pady=(0, 4))
-        tk.Label(self.__container, text='Recently saved', font=(self.__font, 20),
+        tk.Label(main_content, text='Recently saved', font=(self.__font, 20),
                  bg=self.__colour1, fg=self.__muted, anchor='w').pack(fill='x', padx=20, pady=(0, 12))
         if len(recents) == 0:
             tk.Label(self.__container, text='No recently saved simulations', font=(self.__font, 15),
@@ -431,7 +431,7 @@ class Application:
             for column, (simulation_id, name, saved_date, best_xg, file_path) in enumerate(recents):
                 sim_box = tk.Frame(recents_row, bg='white', highlightthickness=1,
                                    highlightbackground=self.__border, cursor=self.__hand)
-                sim_box.grid(row=0, column=column, fill='x', padx=30, pady=(0, 10))
+                sim_box.grid(row=0, column=column, padx=30, pady=(0, 10))
                 name_label = tk.Label(sim_box, text=name, font=(self.__font, 15, 'bold'), bg='white',
                                       fg=self.__text, anchor='w')
                 name_label.pack(fill='x', padx=16, pady=(12, 2))
