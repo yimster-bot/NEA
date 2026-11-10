@@ -211,6 +211,7 @@ class Application:
         #Allows the user to type immediately without clicking first
         email_entry.focus_set()
 
+
     def create_account_screen(self):
         #Sets frame for screen and clears all widgets from the screen
         self.clear_container()
@@ -277,6 +278,7 @@ class Application:
         error_label = tk.Label(card, text='', font=(self.__font, 11), bg=self.__colour1,
                                fg=self.__error, wraplength=300, justify='left', anchor='w')
         error_label.pack(fill='x', pady=(0, 8))
+
 
         #validation function for account creation screen
         def attempt_create_account():
@@ -409,10 +411,10 @@ class Application:
                 part.bind('<Enter>', lambda event: set_background(self.__border))
                 part.bind('<Leave>', lambda event: set_background(self.__colour1))
 
-        nav_item('⌂', 'Home', self.general_loading_screen('Loading home page', self.home_screen))
-        nav_item('+', 'New Simulation', self.general_loading_screen('Loading simulation creation page', self.new_simulation_screen))
-        nav_item('⇄', 'Compare', self.general_loading_screen('Loading comparison page', self.comparison_screen))
-        nav_item('⚙', 'Settings', self.general_loading_screen('Loading settings', self.settings_screen))
+        nav_item('⌂', 'Home', lambda: self.general_loading_screen('Loading home page', self.home_screen))
+        nav_item('+', 'New Simulation', lambda: self.general_loading_screen('Loading simulation creation page', self.new_simulation_screen))
+        nav_item('⇄', 'Compare', lambda: self.general_loading_screen('Loading comparison page', self.comparison_screen))
+        nav_item('⚙', 'Settings', lambda: self.general_loading_screen('Loading settings', self.settings_screen))
 
         recents = recent_sims(self.__db_connection, self.__current_user.get_userID())
         tk.Label(main_content, text=' ', font=(self.__font, 5, 'bold'),
@@ -519,18 +521,25 @@ class Application:
         tk.Label(self.__container, text='Create simulation screen', font=(self.__font, 24, 'bold'),
                  bg=self.__colour1, fg=self.__colour2).pack(pady=(0, 4))
 
+        button = tk.Button(self.__container, text="Home", command=self.home_screen)
+        button.pack(pady=20)
 
-    def results_screen(self):
+
+    def results_screen(self, path):
         self.clear_container()
         tk.Label(self.__container, text='Results screen', font=(self.__font, 24, 'bold'),
                  bg=self.__colour1, fg=self.__colour2).pack(pady=(0, 4))
 
+        button = tk.Button(self.__container, text="Home", command=self.home_screen)
+        button.pack(pady=20)
 
     def comparison_screen(self):
         self.clear_container()
         tk.Label(self.__container, text='Comparison screen', font=(self.__font, 24, 'bold'),
                  bg=self.__colour1, fg=self.__colour2).pack(pady=(0, 4))
 
+        button = tk.Button(self.__container, text="Home", command=self.home_screen)
+        button.pack(pady=20)
 
     def split_results_screen(self):
         pass
@@ -572,8 +581,11 @@ class Application:
 
     def settings_screen(self):
         self.clear_container()
-        tk.Label(self.__container, text='Comparison screen', font=(self.__font, 24, 'bold'),
+        tk.Label(self.__container, text='Settings', font=(self.__font, 24, 'bold'),
                  bg=self.__colour1, fg=self.__colour2).pack(pady=(0, 4))
+
+        button = tk.Button(self.__container, text="Home", command=self.home_screen)
+        button.pack(pady=20)
 
 
 
