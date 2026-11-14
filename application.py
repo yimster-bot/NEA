@@ -191,6 +191,7 @@ class Application:
             self.__current_user = user
             if self.__manager is not None:
                 self.__manager.current_user = user
+            self.__set_window_size(1280, 800)
             self.general_loading_screen('Login successful, loading home page', self.home_screen) #displays successful message and switches screen
 
         #login button
@@ -337,6 +338,7 @@ class Application:
             self.__current_user = user
             if self.__manager is not None:
                 self.__manager.current_user = user
+            self.__set_window_size(1280, 800)
             self.general_loading_screen('Account creation successful, loading home page', self.home_screen)
 
         # login button
@@ -350,33 +352,47 @@ class Application:
 
 
     def home_screen(self):
+        # Sets frame for screen and clears all widgets from the screen
         self.clear_container()
-        self.__set_window_size(1280, 800)
+
+        #dimensions for sidebar so when expanded and collapsed the width is constant
         expanded_width = 200
         collapsed_width = 56
 
+        #making the sidebar
         sidebar = tk.Frame(self.__container, bg=self.__colour1, width=expanded_width,
                            highlightthickness=1, highlightbackground=self.__border)
         sidebar.pack(side='left', fill='y')
         sidebar.pack_propagate(False)  # stops the sidebar shrinking to fit its contents, so the width set above is kept
 
+        #content next to the sidebar, so files display
         main_content = tk.Frame(self.__container, bg=self.__colour1)
         main_content.pack(side='right', fill='both', expand=True)
 
-        # sidebar state
+        # sidebar state, starts expanded
         is_expanded = True
         nav_text_labels = []  # text next to each icon, hidden when the sidebar is collapsed
 
+        #function to toggle the sidebar
         def toggle_sidebar(event=None):
+            #uses nonlocal so is_expanded can be changed within this function
             nonlocal is_expanded
+
             if is_expanded:
+                #modifies sidebar width
                 sidebar.configure(width=collapsed_width)
+
+                #for each label in nav_text_labels, code unpacks it so it is not displayed
                 for label in nav_text_labels:
                     label.pack_forget()
             else:
+                # modifies sidebar width
                 sidebar.configure(width=expanded_width)
+
+                # for each label in nav_text_labels, it individually packed
                 for label in nav_text_labels:
                     label.pack(side='left', fill='x')
+            # toggles is_expanded
             is_expanded = not is_expanded
 
         # toggle button
@@ -389,18 +405,27 @@ class Application:
 
         # creates one sidebar button made of an icon and its text
         def nav_item(icon, text, command):
+            #container frame for the navigation items
             item = tk.Frame(sidebar, bg=self.__colour1, cursor=self.__hand)
             item.pack(fill='x', pady=2)
+
+            # label for icons, aligned to the left of the sidebar
             icon_label = tk.Label(item, text=icon, font=(self.__font, 18), bg=self.__colour1,
                                   fg=self.__colour2, width=2)
             icon_label.pack(side='left', padx=(8, 10), pady=8)
+
+            # label for text next to the icons
             text_label = tk.Label(item, text=text, font=(self.__font, 13, 'bold'), bg=self.__colour1,
                                   fg=self.__text, anchor='w')
             text_label.pack(side='left', fill='x')
+
+            # keeps track of every label in the navigation menu
             nav_text_labels.append(text_label)
 
+            # groups all the child components so it is easier to design screen components
             parts = (item, icon_label, text_label)
 
+            #sets a centralised background colour for each part so looks unified
             def set_background(colour):
                 for part in parts:
                     part.configure(bg=colour)
@@ -411,11 +436,14 @@ class Application:
                 part.bind('<Enter>', lambda event: set_background(self.__border))
                 part.bind('<Leave>', lambda event: set_background(self.__colour1))
 
+        #making each label with lambdas so the loading screen function does not run right away
         nav_item('⌂', 'Home', lambda: self.general_loading_screen('Loading home page', self.home_screen))
         nav_item('+', 'New Simulation', lambda: self.general_loading_screen('Loading simulation creation page', self.new_simulation_screen))
         nav_item('⇄', 'Compare', lambda: self.general_loading_screen('Loading comparison page', self.comparison_screen))
         nav_item('⚙', 'Settings', lambda: self.general_loading_screen('Loading settings', self.settings_screen))
 
+        #display titles for recent sim section
+        #calls recent_sims function for the current user from the db setup file to see if there are any previous simulations, returns the most recent four simulations
         recents = recent_sims(self.__db_connection, self.__current_user.get_userID())
         tk.Label(main_content, text=' ', font=(self.__font, 5, 'bold'),
                  bg=self.__colour1, fg=self.__colour2, anchor='w').pack(fill='x', padx=20)
@@ -423,14 +451,20 @@ class Application:
                  bg=self.__colour1, fg=self.__colour2, anchor='w').pack(fill='x', padx=20, pady=(0, 4))
         tk.Label(main_content, text='Recently saved', font=(self.__font, 20),
                  bg=self.__colour1, fg=self.__muted, anchor='w').pack(fill='x', padx=20, pady=(0, 12))
+
+        #checks if no records exist in the database and then prints no recently saved simulations
         if len(recents) == 0:
-            tk.Label(self.__container, text='No recently saved simulations', font=(self.__font, 15),
+            tk.Label(main_content, text='No recently saved simulations', font=(self.__font, 15),
                      bg=self.__colour1, fg=self.__muted, anchor='w').pack(fill='x', padx=20, pady=(0, 12))
         else:
+            # frame container to hold grid for recent items
             recents_row = tk.Frame(main_content, bg=self.__colour1)
             recents_row.pack(fill='x', padx=15)
+
+            # configure equal-width columns that expand proportionally across the row
             recents_row.columnconfigure((0,1,2,3), weight=1, uniform='recent')
 
+            # Iterate over the recent simulations and build widgets for each one
             for column, (simulation_id, name, saved_date, best_xg, file_path) in enumerate(recents):
                 sim_box = tk.Frame(recents_row, bg='white', highlightthickness=1,
                                    highlightbackground=self.__border, cursor=self.__hand)
@@ -438,10 +472,14 @@ class Application:
                 name_label = tk.Label(sim_box, text=name, font=(self.__font, 15, 'bold'), bg='white',
                                       fg=self.__text, anchor='w')
                 name_label.pack(fill='x', padx=9, pady=(12, 2))
+
+                #displays date and best xG
                 info_label = tk.Label(sim_box, text=f'Saved {saved_date}  ·  Best xG: {best_xg:.2f}',
                                       font=(self.__font, 12), bg='white', fg=self.__muted, anchor='w', width=1)
                 info_label.pack(fill='x', padx=9, pady=(0, 12))
+
                 # binds every part of the box so clicking anywhere opens that simulation
+                # Late-binding scope traps in loops are avoided by binding variables as default arguments
                 for part in (sim_box, name_label, info_label):
                     part.bind('<Button-1>', lambda event, path=file_path: self.results_screen(path))
                     part.bind('<Enter>', lambda event, box=sim_box: box.configure(highlightbackground=self.__colour2))
@@ -452,11 +490,16 @@ class Application:
 
         # styling for the table, so it matches the rest of the app
         style = ttk.Style()
-        style.theme_use('clam')  # the default Mac theme ignores most colour settings
+        style.theme_use('clam')  # Uses 'clam' theme to enable custom cross-platform color modifications on macOS/Windows.
+
+        #Makes custom style for table rows
         style.configure('Files.Treeview', background='white', fieldbackground='white',
                         foreground=self.__text, rowheight=36, font=(self.__font, 13), borderwidth=0)
+        #styles column headers
         style.configure('Files.Treeview.Heading', background=self.__colour1, foreground=self.__muted,
                         font=(self.__font, 12, 'bold'), relief='flat', padding=(8, 6))
+
+        # The style.map controls dynamic states like when a row is selected or header is hovered over
         style.map('Files.Treeview', background=[('selected', self.__border)],
                   foreground=[('selected', self.__text)])
         style.map('Files.Treeview.Heading', background=[('active', self.__border)])
@@ -466,20 +509,29 @@ class Application:
                                highlightbackground=self.__border)
         files_frame.pack(fill='both', expand=True, padx=20, pady=(0, 20))
 
+        #defines column IDs and display labels
+        #creates the treeview inside files_frame and shows='headings' hides the default empty first tree column
+        #selectmode='browse' restricts the user to selecting one row at a time
         columns = ('name', 'date', 'best_xg')
         headings = {'name': 'Name', 'date': 'Date saved', 'best_xg': 'Best xG'}
         files = ttk.Treeview(files_frame, columns=columns, show='headings',
                              style='Files.Treeview', selectmode='browse')
+
+        #configures column alignment and widths
         files.column('name', anchor='w', width=400)
         files.column('date', anchor='w', width=150, stretch=False)
         files.column('best_xg', anchor='w', width=120, stretch=False)
 
+        #Links scrollbar to file explorer.
+        # dragging the bar moves the table and scrolling on the table updates the scrollbar's position
         scrollbar = ttk.Scrollbar(files_frame, orient='vertical', command=files.yview)
         files.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side='right', fill='y')
         files.pack(side='left', fill='both', expand=True)
 
         # fills the table, remembering each row's file path so it can be opened
+        # adds each record to the bottom of the table and returns unique row id
+        # stores file_path in dictionary keyed by row_id so the path stays hidden from the UI
         file_paths = {}
         for simulation_id, name, saved_date, best_xg, file_path in all_sims(self.__db_connection,
                                                                             self.__current_user.get_userID()):
@@ -488,29 +540,36 @@ class Application:
 
         # sorts the table when a column heading is clicked; clicking again reverses the order
         def sort_by(column, descending):
+            # builds list of (cell_value, row_id) tuples for every row in table
             rows = [(files.set(row_id, column), row_id) for row_id in files.get_children()]
+
+            #sorts numerically if by best_xg and case-insensitively for text
             if column == 'best_xg':
                 rows.sort(key=lambda row: float(row[0]), reverse=descending)
             else:
                 rows.sort(key=lambda row: row[0].lower(), reverse=descending)
+
+            # reorders existing rows using files.move()
             for position, (value, row_id) in enumerate(rows):
                 files.move(row_id, '', position)
+
             # shows an arrow on the sorted column only
             for col in columns:
                 files.heading(col, text=headings[col])
             files.heading(column, text=headings[column] + (' ▼' if descending else ' ▲'),
                           command=lambda: sort_by(column, not descending))
 
+        # initialises all the headers and makes name sort ascending first, while date and best_xg sort descending first
         for col in columns:
             files.heading(col, text=headings[col], anchor='w',
                           command=lambda col=col: sort_by(col, col != 'name'))
         files.heading('date', text='Date saved ▼')  # table starts sorted newest first
 
-        # double click (or enter) opens the selected simulation, like OneDrive
+        # double click or enter opens the selected simulation
         def open_selected(event=None):
             selected = files.selection()
             if selected:
-                self.results_screen(file_paths[selected[0]])
+                self.general_loading_screen('Loading selected simulation', self.results_screen(file_paths[selected[0]]))
 
         files.bind('<Double-1>', open_selected)
         files.bind('<Return>', open_selected)
