@@ -479,9 +479,9 @@ class Application:
                 info_label.pack(fill='x', padx=9, pady=(0, 12))
 
                 # binds every part of the box so clicking anywhere opens that simulation
-                # Late-binding scope traps in loops are avoided by binding variables as default arguments
                 for part in (sim_box, name_label, info_label):
-                    part.bind('<Button-1>', lambda event, path=file_path: self.results_screen(path))
+                    part.bind('<Button-1>', lambda event, path=file_path: self.general_loading_screen
+                    ('Loading selected simulation', lambda: self.results_screen(path)))
                     part.bind('<Enter>', lambda event, box=sim_box: box.configure(highlightbackground=self.__colour2))
                     part.bind('<Leave>', lambda event, box=sim_box: box.configure(highlightbackground=self.__border))
 
@@ -490,7 +490,7 @@ class Application:
 
         # styling for the table, so it matches the rest of the app
         style = ttk.Style()
-        style.theme_use('clam')  # Uses 'clam' theme to enable custom cross-platform color modifications on macOS/Windows.
+        style.theme_use('clam')
 
         #Makes custom style for table rows
         style.configure('Files.Treeview', background='white', fieldbackground='white',
@@ -569,7 +569,7 @@ class Application:
         def open_selected(event=None):
             selected = files.selection()
             if selected:
-                self.general_loading_screen('Loading selected simulation', self.results_screen(file_paths[selected[0]]))
+                self.general_loading_screen('Loading selected simulation', lambda: self.results_screen(file_paths[selected[0]]))
 
         files.bind('<Double-1>', open_selected)
         files.bind('<Return>', open_selected)
@@ -577,28 +577,65 @@ class Application:
 
     def new_simulation_screen(self):
         self.clear_container()
-        tk.Label(self.__container, text='Create simulation screen', font=(self.__font, 24, 'bold'),
-                 bg=self.__colour1, fg=self.__colour2).pack(pady=(0, 4))
+        heading = tk.Frame(self.__container, bg=self.__colour1)
+        heading.pack(fill='x', padx=15)
 
-        button = tk.Button(self.__container, text="Home", command=self.home_screen)
-        button.pack(pady=20)
+        icon_label = tk.Label(heading, text='⌂', font=(self.__font, 20), bg=self.__colour1,
+                              fg=self.__colour2, width=2, cursor=self.__hand)
+        icon_label.pack(side='left', anchor='nw', padx=(8, 10), pady=5)
+        icon_label.bind('<Button-1>',
+                        lambda event: self.general_loading_screen('Returning to home screen', self.home_screen))
+        icon_label.bind('<Enter>', lambda event: icon_label.configure(self.__border))
+        icon_label.bind('<Leave>', lambda event: icon_label.configure(self.__colour1))
+        name_entry = self.__entry(heading)
+        name_entry.pack(side='left', anchor='w', padx=(8,10), pady=8)
+        name_entry.insert(0, 'Untitled simulation')
+        name_entry.bind('<FocusIn>', lambda event: name_entry.select_range(0, 'end'))
+        help_label = tk.Label(heading, text='?', font=(self.__font, 18), bg=self.__colour1,
+                              fg=self.__colour2, width=2, cursor=self.__hand)
+        help_label.pack(side='right', anchor='e', padx=(8,10), pady=8)
+        help_label.bind('<Enter>', lambda event: help_label.configure(self.__border))
+        help_label.bind('<Leave>', lambda event: help_label.configure(self.__colour1))
+
+        main_content = tk.Frame(self.__container, bg=self.__colour1)
+        main_content.pack(fill='x', padx=15)
+        main_content.columnconfigure((0,1), weight=1)
+        def on_canvas_click(event):
+            x, y = event.x, event.y
+            canvas.create_oval(x - 5, y - 5, x + 5, y + 5, fill='red', outline='red')
+
+            print(f'Clicked at: {x}, {y}')
+
+        canvas = tk.Canvas(main_content, width=544, height=840, bg='green')
+        canvas.pack(anchor='w')
+        canvas.create_oval(185, 185, 215, 215, outline='white', width=2)
+        canvas.create_rectangle(50, 50, 350, 350, outline='white', width=3)
+        canvas.bind('<Button-1>', on_canvas_click)
+
 
 
     def results_screen(self, path):
         self.clear_container()
-        tk.Label(self.__container, text='Results screen', font=(self.__font, 24, 'bold'),
-                 bg=self.__colour1, fg=self.__colour2).pack(pady=(0, 4))
+        icon_label = tk.Label(self.__container, text='⌂', font=(self.__font, 18), bg=self.__colour1,
+                              fg=self.__colour2, width=2)
+        icon_label.pack(side='left', anchor='nw', padx=(8, 10), pady=8)
+        icon_label.bind('<Button-1>', lambda event: self.general_loading_screen('Returning to home screen', self.home_screen))
+        icon_label.bind('<Enter>', lambda event: icon_label.configure(self.__border))
+        icon_label.bind('<Leave>', lambda event: icon_label.configure(self.__colour1))
 
-        button = tk.Button(self.__container, text="Home", command=self.home_screen)
-        button.pack(pady=20)
 
     def comparison_screen(self):
         self.clear_container()
+        icon_label = tk.Label(self.__container, text='⌂', font=(self.__font, 18), bg=self.__colour1,
+                              fg=self.__colour2, width=2)
+        icon_label.pack(side='left', anchor='nw', padx=(8, 10), pady=8)
+        icon_label.bind('<Button-1>',
+                        lambda event: self.general_loading_screen('Returning to home screen', self.home_screen))
+        icon_label.bind('<Enter>', lambda event: icon_label.configure(self.__border))
+        icon_label.bind('<Leave>', lambda event: icon_label.configure(self.__colour1))
         tk.Label(self.__container, text='Comparison screen', font=(self.__font, 24, 'bold'),
                  bg=self.__colour1, fg=self.__colour2).pack(pady=(0, 4))
 
-        button = tk.Button(self.__container, text="Home", command=self.home_screen)
-        button.pack(pady=20)
 
     def split_results_screen(self):
         pass
@@ -640,11 +677,15 @@ class Application:
 
     def settings_screen(self):
         self.clear_container()
+        icon_label = tk.Label(self.__container, text='⌂', font=(self.__font, 18), bg=self.__colour1,
+                              fg=self.__colour2, width=2)
+        icon_label.pack(side='left', anchor='nw', padx=(8, 10), pady=8)
+        icon_label.bind('<Button-1>',
+                        lambda event: self.general_loading_screen('Returning to home screen', self.home_screen))
+        icon_label.bind('<Enter>', lambda event: icon_label.configure(self.__border))
+        icon_label.bind('<Leave>', lambda event: icon_label.configure(self.__colour1))
         tk.Label(self.__container, text='Settings', font=(self.__font, 24, 'bold'),
                  bg=self.__colour1, fg=self.__colour2).pack(pady=(0, 4))
-
-        button = tk.Button(self.__container, text="Home", command=self.home_screen)
-        button.pack(pady=20)
 
 
 
