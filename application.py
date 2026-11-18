@@ -600,16 +600,40 @@ class Application:
         main_content = tk.Frame(self.__container, bg=self.__colour1)
         main_content.pack(fill='x', padx=15)
         main_content.columnconfigure((0,1), weight=1)
+
         def on_canvas_click(event):
             x, y = event.x, event.y
             canvas.create_oval(x - 5, y - 5, x + 5, y + 5, fill='red', outline='red')
 
             print(f'Clicked at: {x}, {y}')
 
-        canvas = tk.Canvas(main_content, width=544, height=840, bg='green')
-        canvas.pack(anchor='w')
-        canvas.create_oval(185, 185, 215, 215, outline='white', width=2)
-        canvas.create_rectangle(50, 50, 350, 350, outline='white', width=3)
+        # starts at 15, 0
+        canvas = tk.Canvas(main_content, width=680, height=525, bg='green', highlightbackground='white')
+        canvas.pack(anchor='w', pady=35)
+        #Clicked at: 344, 527
+        #center circle
+        canvas.create_oval(252.5,440.5,435.5, 623.5, outline='white', width=3)
+
+        # center dot
+        canvas.create_oval(339,  522, 349, 532, fill='white', outline='white')
+
+        # penalty box
+        canvas.create_rectangle(344-201.6, 0, 344+201.6, 165, outline='white', width=3)
+
+        # goal box
+        canvas.create_rectangle(344 - 91.6, 0, 344 + 91.6, 55, outline='white', width=3)
+
+        #penalty dot
+        canvas.create_oval(339, 105, 349, 115, fill='white', outline='white')
+
+        # penalty arc
+        canvas.create_arc(270, 80, 420, 205, start=200, extent=140, style=tk.ARC, outline='white', width=3)
+
+        # corners
+        canvas.create_oval(-10, -10, 10, 10, outline='white', width=3)
+        canvas.create_oval(675, -10, 695, 10, outline='white', width=3)
+
+       # canvas.create_oval(270.9, 110, 417.1, 201.5, outline='white', width=3)
         canvas.bind('<Button-1>', on_canvas_click)
 
 
