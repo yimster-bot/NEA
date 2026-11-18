@@ -607,34 +607,66 @@ class Application:
 
             print(f'Clicked at: {x}, {y}')
 
+        margin = 30
         # starts at 15, 0
-        canvas = tk.Canvas(main_content, width=680, height=525, bg='green', highlightbackground='white')
-        canvas.pack(anchor='w', pady=35)
+        canvas = tk.Canvas(main_content, width= 680, height=525+ margin, bg='green', highlightthickness=0)
+        canvas.pack(anchor='w', pady=5)
         #Clicked at: 344, 527
+
         #center circle
-        canvas.create_oval(252.5,440.5,435.5, 623.5, outline='white', width=3)
+        canvas.create_oval(248.5, 463.5, 431.5, 646.5, outline='white', width=3)
 
         # center dot
-        canvas.create_oval(339,  522, 349, 532, fill='white', outline='white')
+        canvas.create_oval(335, 550, 345, 560, fill='white', outline='white')
 
         # penalty box
-        canvas.create_rectangle(344-201.6, 0, 344+201.6, 165, outline='white', width=3)
+        canvas.create_rectangle(340-201.6, 29, 340+201.6, 195, outline='white', width=3)
 
         # goal box
-        canvas.create_rectangle(344 - 91.6, 0, 344 + 91.6, 55, outline='white', width=3)
+        canvas.create_rectangle(340 - 91.6, 29, 340 + 91.6, 85, outline='white', width=3)
 
         #penalty dot
-        canvas.create_oval(339, 105, 349, 115, fill='white', outline='white')
+        canvas.create_oval(335, 135, 345, 145, fill='white', outline='white')
 
         # penalty arc
-        canvas.create_arc(270, 80, 420, 205, start=200, extent=140, style=tk.ARC, outline='white', width=3)
+        canvas.create_arc(248.5, 48.5, 431.5, 231.5, start=216.9, extent=106.2, style=tk.ARC, outline='white', width=3)
 
         # corners
-        canvas.create_oval(-10, -10, 10, 10, outline='white', width=3)
-        canvas.create_oval(675, -10, 695, 10, outline='white', width=3)
+        canvas.create_oval(-10, 20, 10, 40, outline='white', width=3)
+        canvas.create_oval(670, 20, 690, 40, outline='white', width=3)
+
+        # pitch
+        canvas.create_rectangle(0, 0, 690, 30, fill=self.__colour1, outline=self.__colour1)
+
+        #goal
+        canvas.create_rectangle(303.4, 10, 376.6, 30, outline='white', width=3)
+        canvas.create_rectangle(303.4,32, 376.6 , 34, fill='green', width=3, outline='green')
 
        # canvas.create_oval(270.9, 110, 417.1, 201.5, outline='white', width=3)
         canvas.bind('<Button-1>', on_canvas_click)
+        # •
+
+        roles = [('Attacker', 'red'), ('Goalkeeper', 'grey'), ('Shooter', 'yellow'), ('Deliverer', 'blue')]
+        input_frame = tk.Frame(main_content, bg=self.__colour1)
+        input_frame.pack(fill='x', padx=15)
+        clicker = tk.Frame(input_frame, bg=self.__colour1)
+        clicker.pack(fill='x', padx=15)
+        clicker.columnconfigure((0, 1, 2, 3), weight=1, uniform='recent')
+
+        for column, (role, colour) in enumerate(roles):
+            player_box = tk.Frame(clicker, bg='white', highlightthickness=1,
+                           highlightbackground=self.__border, cursor=self.__hand)
+            player_box.grid(row = 0, column=column, sticky = 'nsew', padx=5, pady=(0,10))
+            player_icon = tk.Label(player_box, text='•', font=(self.__font, 20, 'bold'), anchor='w', fg=colour)
+            player_icon.pack(fill='x', padx=9, pady=(12,2))
+            player_text = tk.Label(player_box, text=role, font=(self.__font, 11, 'bold'),
+                                   bg='white', fg=self.__text, anchor='w')
+            player_text.pack(fill='x', padx=9, pady=(12,2))
+
+            for part in (player_box, player_icon, player_text):
+                #
+                icon_label.bind('<Enter>', lambda event: icon_label.configure(bg=self.__border))
+                icon_label.bind('<Leave>', lambda event: icon_label.configure(bg=self.__colour1))
 
 
 
