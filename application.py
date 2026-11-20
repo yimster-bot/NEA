@@ -603,14 +603,14 @@ class Application:
 
         def on_canvas_click(event):
             x, y = event.x, event.y
-            canvas.create_oval(x - 5, y - 5, x + 5, y + 5, fill='red', outline='red')
+            canvas.create_oval(x - 5, y - 5, x + 5, y + 5, fill=colour, outline=colour)
 
             print(f'Clicked at: {x}, {y}')
 
         margin = 30
         # starts at 15, 0
         canvas = tk.Canvas(main_content, width= 680, height=525+ margin, bg='green', highlightthickness=0)
-        canvas.pack(anchor='w', pady=5)
+        canvas.grid(row=0, column=0, sticky='nw', pady=5)
         #Clicked at: 344, 527
 
         #center circle
@@ -646,27 +646,59 @@ class Application:
         canvas.bind('<Button-1>', on_canvas_click)
         # •
 
+
         roles = [('Attacker', 'red'), ('Goalkeeper', 'grey'), ('Shooter', 'yellow'), ('Deliverer', 'blue')]
         input_frame = tk.Frame(main_content, bg=self.__colour1)
-        input_frame.pack(fill='x', padx=15)
+        input_frame.grid(row=0, column=1, sticky='nsew', padx=15)
         clicker = tk.Frame(input_frame, bg=self.__colour1)
         clicker.pack(fill='x', padx=15)
         clicker.columnconfigure((0, 1, 2, 3), weight=1, uniform='recent')
 
+        active_role = None
+        role_boxes = {}
+
+        def toggle_role(role, colour):
+            nonlocal active_role
+            if active_role == (role, colour):
+                active_role = None
+                role_boxes[role].configure(bg='white', highlightbackground=self.__border, highlightthickness=1)
+                for child in role_boxes[role].winfo_children():
+                    child.configure(bg='white')
+            else:
+                for r, box in role_boxes.items():
+                    box.configure(bg='white', highlightbackground=self.__border, highlightthickness=1)
+                    for child in box.winfo_children():
+                        child.configure(bg='white')
+
+                active_role = (role, colour)
+                active_box = role_boxes[role]
+                active_box.configure(bg=self.__colour2, highlightbackground=self.__colour2, highlightthickness=2)
+                for child in active_box.winfo_children():
+                    child.configure(bg=self.__colour2)
+
+
         for column, (role, colour) in enumerate(roles):
-            player_box = tk.Frame(clicker, bg='white', highlightthickness=1,
-                           highlightbackground=self.__border, cursor=self.__hand)
+            player_box = tk.Frame(clicker, bg='white', width=105, height=105,
+                                  highlightthickness=1, highlightbackground=self.__border, cursor=self.__hand)
             player_box.grid(row = 0, column=column, sticky = 'nsew', padx=5, pady=(0,10))
-            player_icon = tk.Label(player_box, text='•', font=(self.__font, 20, 'bold'), anchor='w', fg=colour)
-            player_icon.pack(fill='x', padx=9, pady=(12,2))
+            player_box.pack_propagate(False)
+            role_boxes[role] = player_box
+
+            player_icon = tk.Canvas(player_box, width=36, height=36, bg='white', highlightthickness=0)
+            player_icon.pack(anchor='center', padx=10, pady=(14,4))
+            player_icon.create_oval(2,2,34,34, fill=colour, outline=colour)
             player_text = tk.Label(player_box, text=role, font=(self.__font, 11, 'bold'),
-                                   bg='white', fg=self.__text, anchor='w')
+                                   bg='white', fg=self.__text, anchor='center')
             player_text.pack(fill='x', padx=9, pady=(12,2))
 
             for part in (player_box, player_icon, player_text):
-                #
-                icon_label.bind('<Enter>', lambda event: icon_label.configure(bg=self.__border))
-                icon_label.bind('<Leave>', lambda event: icon_label.configure(bg=self.__colour1))
+                part.bind('<Button_1>', lambda event, r=role, c=colour: toggle_role(r, c))
+                part.bind('<Enter>', lambda event, box=player_box, r=role: (box.configure(highlightbackground=self.__colour2)
+                          if not active_role or active_role[0] != r else None))
+                part.bind('<Leave>', lambda event, box=player_box, r=role: (
+                    box.configure(highlightbackground=self.__border)
+                    if not active_role or active_role[0] != r else None
+                ))
 
 
 
