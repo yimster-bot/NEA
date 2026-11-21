@@ -654,6 +654,10 @@ class Application:
 
 
         roles = [('Attacker', 'red'), ('Goalkeeper', 'grey'), ('Shooter', 'yellow'), ('Deliverer', 'blue')]
+        attacker_pos = []
+        goalkeeper_pos = []
+        shooter_pos = []
+        deliverer_pos = []
         input_frame = tk.Frame(main_content, bg=self.__colour1)
         input_frame.grid(row=0, column=1, sticky='nsew', padx=15)
         clicker = tk.Frame(input_frame, bg=self.__colour1)
