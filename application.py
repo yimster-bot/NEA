@@ -95,7 +95,7 @@ class Application:
         box = tk.Frame(parent, bg='white', highlightthickness=1, highlightbackground=self.__border,
                        cursor=self.__hand)
         value = tk.Label(box, textvariable=var, font=(self.__font, 14), bg='white',
-                         fg=self.__border, anchor='w', padx=8, pady=4)
+                         fg=self.__font, anchor='w', padx=8, pady=4)
         arrow = tk.Label(box, text='▾', font=(self.__font, 14), bg='white',
                          fg=self.__colour2, padx=8)
         value.pack(side='left', fill='x', expand=True)
@@ -585,8 +585,8 @@ class Application:
         icon_label.pack(side='left', anchor='nw', padx=(8, 10), pady=5)
         icon_label.bind('<Button-1>',
                         lambda event: self.general_loading_screen('Returning to home screen', self.home_screen))
-        icon_label.bind('<Enter>', lambda event: icon_label.configure(self.__border))
-        icon_label.bind('<Leave>', lambda event: icon_label.configure(self.__colour1))
+        icon_label.bind('<Enter>', lambda event: icon_label.configure(bg=self.__border))
+        icon_label.bind('<Leave>', lambda event: icon_label.configure(bg=self.__colour1))
         name_entry = self.__entry(heading)
         name_entry.pack(side='left', anchor='w', padx=(8,10), pady=8)
         name_entry.insert(0, 'Untitled simulation')
@@ -594,18 +594,23 @@ class Application:
         help_label = tk.Label(heading, text='?', font=(self.__font, 18), bg=self.__colour1,
                               fg=self.__colour2, width=2, cursor=self.__hand)
         help_label.pack(side='right', anchor='e', padx=(8,10), pady=8)
-        help_label.bind('<Enter>', lambda event: help_label.configure(self.__border))
-        help_label.bind('<Leave>', lambda event: help_label.configure(self.__colour1))
+        help_label.bind('<Enter>', lambda event: help_label.configure(bg=self.__border))
+        help_label.bind('<Leave>', lambda event: help_label.configure(bg=self.__colour1))
 
         main_content = tk.Frame(self.__container, bg=self.__colour1)
         main_content.pack(fill='x', padx=15)
         main_content.columnconfigure((0,1), weight=1)
 
         def on_canvas_click(event):
+            if active_role is None:
+                return
+            if event.y<margin:
+                return
+            role, colour = active_role
             x, y = event.x, event.y
             canvas.create_oval(x - 5, y - 5, x + 5, y + 5, fill=colour, outline=colour)
 
-            print(f'Clicked at: {x}, {y}')
+            print(f'{role} placed at: {x}, {y}')
 
         margin = 30
         # starts at 15, 0
@@ -692,7 +697,7 @@ class Application:
             player_text.pack(fill='x', padx=9, pady=(12,2))
 
             for part in (player_box, player_icon, player_text):
-                part.bind('<Button_1>', lambda event, r=role, c=colour: toggle_role(r, c))
+                part.bind('<Button-1>', lambda event, r=role, c=colour: toggle_role(r, c))
                 part.bind('<Enter>', lambda event, box=player_box, r=role: (box.configure(highlightbackground=self.__colour2)
                           if not active_role or active_role[0] != r else None))
                 part.bind('<Leave>', lambda event, box=player_box, r=role: (
@@ -700,6 +705,26 @@ class Application:
                     if not active_role or active_role[0] != r else None
                 ))
 
+        event_type_label = tk.Label(input_frame, text='Event type:', font=(self.__font, 20), bg=self.__colour1,
+                                    fg=self.__colour2, width=2, cursor=self.__hand)
+        event_type_label.pack(side='left', anchor='w', padx=(8, 10), pady=5)
+        events = ['Corner', 'Free kick']
+        event_type = self.__dropdown(input_frame, events)
+        event_type.pack(padx=(8, 10), anchor='w')
+
+        d_config_label = tk.Label(input_frame, text='Defender configuration:', font=(self.__font, 20), bg=self.__colour1,
+                              fg=self.__colour2, width=2, cursor=self.__hand)
+        d_config_label.pack(side='left', anchor='w', padx=(8, 10), pady=5)
+        d_configs = ['Zonal', 'Man marking', 'Mixed']
+        defender_configuration = self.__dropdown(input_frame, d_configs)
+        defender_configuration.pack(padx=(8, 10), anchor='w')
+
+        del_types_label = tk.Label(input_frame, text='Delivery type:', font=(self.__font, 20), bg=self.__colour1,
+                              fg=self.__colour2, width=2, cursor=self.__hand)
+        del_types_label.pack(side='left', anchor='w', padx=(8, 10), pady=5)
+        del_types = ['Inswinging', 'Outswinging', 'Straight', 'Through ball']
+        delivery_type = self.__dropdown(input_frame, del_types)
+        delivery_type.pack(padx=(8, 10), anchor='w')
 
 
     def results_screen(self, path):
