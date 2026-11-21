@@ -603,61 +603,35 @@ class Application:
         main_content.columnconfigure((0,1), weight=1)
 
         def on_canvas_click(event):
-            if active_role is None:
+            if active_role is None or event.y < margin or len(attacker_pos)>10:
                 return
-            if event.y<margin:
-                return
-            role, colour = active_role
+
+            role = active_role[0]
             x, y = event.x, event.y
-            canvas.create_oval(x - 5, y - 5, x + 5, y + 5, fill=colour, outline=colour)
+
+            if role=='Attacker':
+                attacker_pos.append((x, y))
+            else:
+                if single_pos[role] is not None:
+                    self.__pitch.clear_player(*single_pos[role])
+                single_pos[role] = (x, y)
+            self.__pitch.draw_players(x, y, role)
+            #update_defenders()
 
             print(f'{role} placed at: {x}, {y}')
 
-        margin = 30
-        # starts at 15, 0
-        canvas = tk.Canvas(main_content, width= 680, height=525+ margin, bg='green', highlightthickness=0)
-        canvas.grid(row=0, column=0, sticky='nw', pady=5)
-        #Clicked at: 344, 527
+        canvas = self.__pitch.create_canvas(main_content)
+        canvas.grid(row=0, column=0, stick='nw', pady=5)
+        self.__pitch.draw_pitch(self.__colour1)
+        margin = self.__pitch.get_margin()
 
-        #center circle
-        canvas.create_oval(248.5, 463.5, 431.5, 646.5, outline='white', width=3)
-
-        # center dot
-        canvas.create_oval(335, 550, 345, 560, fill='white', outline='white')
-
-        # penalty box
-        canvas.create_rectangle(340-201.6, 29, 340+201.6, 195, outline='white', width=3)
-
-        # goal box
-        canvas.create_rectangle(340 - 91.6, 29, 340 + 91.6, 85, outline='white', width=3)
-
-        #penalty dot
-        canvas.create_oval(335, 135, 345, 145, fill='white', outline='white')
-
-        # penalty arc
-        canvas.create_arc(248.5, 48.5, 431.5, 231.5, start=216.9, extent=106.2, style=tk.ARC, outline='white', width=3)
-
-        # corners
-        canvas.create_oval(-10, 20, 10, 40, outline='white', width=3)
-        canvas.create_oval(670, 20, 690, 40, outline='white', width=3)
-
-        # pitch
-        canvas.create_rectangle(0, 0, 690, 30, fill=self.__colour1, outline=self.__colour1)
-
-        #goal
-        canvas.create_rectangle(303.4, 10, 376.6, 30, outline='white', width=3)
-        canvas.create_rectangle(303.4,32, 376.6 , 34, fill='green', width=3, outline='green')
-
-       # canvas.create_oval(270.9, 110, 417.1, 201.5, outline='white', width=3)
-        canvas.bind('<Button-1>', on_canvas_click)
-        # •
 
 
         roles = [('Attacker', 'red'), ('Goalkeeper', 'grey'), ('Shooter', 'yellow'), ('Deliverer', 'blue')]
         attacker_pos = []
-        goalkeeper_pos = []
-        shooter_pos = []
-        deliverer_pos = []
+        single_pos = {'Goalkeeper': None, 'Shooter': None, 'Deliverer': None}
+
+
         input_frame = tk.Frame(main_content, bg=self.__colour1)
         input_frame.grid(row=0, column=1, sticky='nsew', padx=15)
         clicker = tk.Frame(input_frame, bg=self.__colour1)
