@@ -705,26 +705,23 @@ class Application:
                     if not active_role or active_role[0] != r else None
                 ))
 
-        event_type_label = tk.Label(input_frame, text='Event type:', font=(self.__font, 20), bg=self.__colour1,
-                                    fg=self.__colour2, width=2, cursor=self.__hand)
-        event_type_label.pack(side='left', anchor='w', padx=(8, 10), pady=5)
+        tk.Label(input_frame, text='Event type', font=(self.__font, 11, 'bold'), bg=self.__colour1,
+                 fg=self.__text, anchor='w').pack(fill='x', padx=20, pady=(10, 2))
         events = ['Corner', 'Free kick']
         event_type = self.__dropdown(input_frame, events)
-        event_type.pack(padx=(8, 10), anchor='w')
+        event_type.pack(fill='x', padx=20, pady=(0, 12))
 
-        d_config_label = tk.Label(input_frame, text='Defender configuration:', font=(self.__font, 20), bg=self.__colour1,
-                              fg=self.__colour2, width=2, cursor=self.__hand)
-        d_config_label.pack(side='left', anchor='w', padx=(8, 10), pady=5)
+        tk.Label(input_frame, text='Defender configuration', font=(self.__font, 11, 'bold'), bg=self.__colour1,
+                 fg=self.__text, anchor='w').pack(fill='x', padx=20, pady=(0, 2))
         d_configs = ['Zonal', 'Man marking', 'Mixed']
         defender_configuration = self.__dropdown(input_frame, d_configs)
-        defender_configuration.pack(padx=(8, 10), anchor='w')
+        defender_configuration.pack(fill='x', padx=20, pady=(0, 12))
 
-        del_types_label = tk.Label(input_frame, text='Delivery type:', font=(self.__font, 20), bg=self.__colour1,
-                              fg=self.__colour2, width=2, cursor=self.__hand)
-        del_types_label.pack(side='left', anchor='w', padx=(8, 10), pady=5)
+        tk.Label(input_frame, text='Delivery type', font=(self.__font, 11, 'bold'), bg=self.__colour1,
+                 fg=self.__text, anchor='w').pack(fill='x', padx=20, pady=(0, 2))
         del_types = ['Inswinging', 'Outswinging', 'Straight', 'Through ball']
         delivery_type = self.__dropdown(input_frame, del_types)
-        delivery_type.pack(padx=(8, 10), anchor='w')
+        delivery_type.pack(fill='x', padx=20, pady=(0, 12))
 
 
     def results_screen(self, path):
