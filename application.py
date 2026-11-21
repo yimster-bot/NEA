@@ -95,7 +95,7 @@ class Application:
         box = tk.Frame(parent, bg='white', highlightthickness=1, highlightbackground=self.__border,
                        cursor=self.__hand)
         value = tk.Label(box, textvariable=var, font=(self.__font, 14), bg='white',
-                         fg=self.__font, anchor='w', padx=8, pady=4)
+                         fg=self.__muted, anchor='w', padx=8, pady=4)
         arrow = tk.Label(box, text='▾', font=(self.__font, 14), bg='white',
                          fg=self.__colour2, padx=8)
         value.pack(side='left', fill='x', expand=True)
@@ -105,6 +105,7 @@ class Application:
 
         def select(option):
             var.set(option)
+            value.configure(fg=self.__text)  # switches from the faded placeholder colour to normal text
             if command:
                 command(option)
 
@@ -119,7 +120,7 @@ class Application:
             widget.bind('<Enter>', lambda event: box.configure(highlightbackground=self.__colour2))
             widget.bind('<Leave>', lambda event: box.configure(highlightbackground=self.__border))
 
-        box.get = lambda: '' if var.get()==placeholder else var.get()
+        box.get = lambda: '' if var.get() == placeholder else var.get()
         return box
 
     def __set_window_size(self, width, height):
@@ -722,6 +723,9 @@ class Application:
         del_types = ['Inswinging', 'Outswinging', 'Straight', 'Through ball']
         delivery_type = self.__dropdown(input_frame, del_types)
         delivery_type.pack(fill='x', padx=20, pady=(0, 12))
+
+        calculate_button = self.__button(input_frame, 'Calculate xG', self.results_screen('path'))
+        calculate_button.pack(fill='x', pady=(0, 14))
 
 
     def results_screen(self, path):
