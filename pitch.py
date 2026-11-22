@@ -38,7 +38,7 @@ class Pitch:
         return self.__canvas
 
     def to_pixels(self, across, depth):
-        return across*self.__scale, (self.__margin+depth)*self.__scale
+        return across*self.__scale, self.__margin+depth*self.__scale
 
     def draw_pitch(self):
         canvas = self.__canvas
@@ -78,7 +78,7 @@ class Pitch:
     def draw_players(self, pixel_x, pixel_y, role):
         colour = self.__role_colours[role]
         return self.__canvas.create_oval(pixel_x-5, pixel_y-5, pixel_x+5, pixel_y+5,
-                                         fill=colour, outline='white', width=2, tags=('player', role))
+                                         fill=colour, outline=colour, width=2, tags=('player', role))
 
     def clear_player(self, pixel_x, pixel_y):
         for item in self.__canvas.find_withtag('player'):
@@ -87,7 +87,7 @@ class Pitch:
                 self.__canvas.delete(item)
                 return
 
-    def clear_player(self, pixel_x, pixel_y):
+    def clear_role(self, pixel_x, pixel_y):
         self.__canvas.delete(role)
 
     def clear_canvas(self):

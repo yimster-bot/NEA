@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 from user import User
 from pitch import Pitch
+from defenders import Defender_Render
 from xg_model import xG_Model
 from feature_calculation import Feature_Calculation
 from db_setup import get_connection, find_user, add_user, check_email_exist, recent_sims, all_sims
@@ -89,39 +90,13 @@ class Application:
         return btn
 
     def __dropdown(self, parent, options, default=None, command=None):
-        placeholder = 'Select option'
-        var = tk.StringVar(value=placeholder)
+        combo = ttk.Combobox(parent, values=options, state='readonly', font=(self.__font, 14), cursor=self.__hand)
+        combo.set(default or 'Select option')
 
-        box = tk.Frame(parent, bg='white', highlightthickness=1, highlightbackground=self.__border,
-                       cursor=self.__hand)
-        value = tk.Label(box, textvariable=var, font=(self.__font, 14), bg='white',
-                         fg=self.__muted, anchor='w', padx=8, pady=4)
-        arrow = tk.Label(box, text='▾', font=(self.__font, 14), bg='white',
-                         fg=self.__colour2, padx=8)
-        value.pack(side='left', fill='x', expand=True)
-        arrow.pack(side='right')
+        if command:
+            combo.bind('<<ComboboxSelected>>', lambda event: command(combo.get()))
 
-        menu = tk.Menu(box, tearoff=0, font=(self.__font, 14))
-
-        def select(option):
-            var.set(option)
-            value.configure(fg=self.__text)  # switches from the faded placeholder colour to normal text
-            if command:
-                command(option)
-
-        for option in options:
-            menu.add_command(label=option, command=lambda o=option: select(o))
-
-        def open_menu(event):
-            menu.tk_popup(box.winfo_rootx(), box.winfo_rooty() + box.winfo_height())
-
-        for widget in (box, value, arrow):
-            widget.bind('<Button-1>', open_menu)
-            widget.bind('<Enter>', lambda event: box.configure(highlightbackground=self.__colour2))
-            widget.bind('<Leave>', lambda event: box.configure(highlightbackground=self.__border))
-
-        box.get = lambda: '' if var.get() == placeholder else var.get()
-        return box
+        return combo  # Already has a built-in .get() method!
 
     def __set_window_size(self, width, height):
         screen_width = self.__root.winfo_screenwidth()
@@ -602,41 +577,50 @@ class Application:
         main_content.pack(fill='x', padx=15)
         main_content.columnconfigure((0,1), weight=1)
 
-        def on_canvas_click(event):
-            if active_role is None or event.y < margin or len(attacker_pos)>10:
-                return
-
-            role = active_role[0]
-            x, y = event.x, event.y
-
-            if role=='Attacker':
-                attacker_pos.append((x, y))
-            else:
-                if single_pos[role] is not None:
-                    self.__pitch.clear_player(*single_pos[role])
-                single_pos[role] = (x, y)
-            self.__pitch.draw_players(x, y, role)
-            #update_defenders()
-
-            print(f'{role} placed at: {x}, {y}')
-
         canvas = self.__pitch.create_canvas(main_content)
-        canvas.grid(row=0, column=0, stick='nw', pady=5)
-        self.__pitch.draw_pitch(self.__colour1)
+        canvas.grid(row=0, column=0, sticky='nw', pady=5)
+        self.__pitch.draw_pitch()
         margin = self.__pitch.get_margin()
-
+        canvas.bind('<Button-1>', on_canvas_click)
 
 
         roles = [('Attacker', 'red'), ('Goalkeeper', 'grey'), ('Shooter', 'yellow'), ('Deliverer', 'blue')]
         attacker_pos = []
         single_pos = {'Goalkeeper': None, 'Shooter': None, 'Deliverer': None}
 
+        def update_defenders(chosen_shape=None):
+            shape = defender_configuration.get()
+            if shape=='Select option':
+                return
+            self.__renderer = Defender_Render(self.__pitch, shape)
+            markable = attacker_pos + ([single_pos['Shooter']] if single_pos['Shooter'] else [])
+            self.__renderer.render(markable)
 
         input_frame = tk.Frame(main_content, bg=self.__colour1)
         input_frame.grid(row=0, column=1, sticky='nsew', padx=15)
         clicker = tk.Frame(input_frame, bg=self.__colour1)
         clicker.pack(fill='x', padx=15)
         clicker.columnconfigure((0, 1, 2, 3), weight=1, uniform='recent')
+
+        def on_canvas_click(event):
+            if active_role is None or event.y < margin:
+                return
+
+            role = active_role[0]
+            x, y = event.x, event.y
+
+            if role=='Attacker':
+                if len(attacker_pos)>10:
+                    return
+                attacker_pos.append((x, y))
+            else:
+                if single_pos[role] is not None:
+                    self.__pitch.clear_player(*single_pos[role])
+                single_pos[role] = (x, y)
+            self.__pitch.draw_players(x, y, role)
+            update_defenders()
+
+            print(f'{role} placed at: {x}, {y}')
 
         active_role = None
         role_boxes = {}
@@ -692,7 +676,7 @@ class Application:
 
         tk.Label(input_frame, text='Defender configuration', font=(self.__font, 11, 'bold'), bg=self.__colour1,
                  fg=self.__text, anchor='w').pack(fill='x', padx=20, pady=(0, 2))
-        d_configs = ['Zonal', 'Man marking', 'Mixed']
+        d_configs = ['Zonal', 'Man marking', 'Mixed', 'No defense']
         defender_configuration = self.__dropdown(input_frame, d_configs)
         defender_configuration.pack(fill='x', padx=20, pady=(0, 12))
 
@@ -702,7 +686,25 @@ class Application:
         delivery_type = self.__dropdown(input_frame, del_types)
         delivery_type.pack(fill='x', padx=20, pady=(0, 12))
 
-        calculate_button = self.__button(input_frame, 'Calculate xG', self.results_screen('path'))
+        error_label = tk.Label(input_frame, text='', font=(self.__font, 11), bg=self.__colour1,
+                               fg=self.__error, wraplength=300, justify='left', anchor='w')
+        error_label.pack(fill='x', pady=(0, 8))
+
+        def attempt_calculate():
+            event = event_type.get()
+            defender = defender_configuration.get()
+            delivery = delivery_type.get()
+
+            if event=='Select option' or defender=='Select option' or delivery=='Select option':
+                error_label.config(text='Fields cannot be empty')
+                return
+            if single_pos['Shooter'] is None:
+                error_label.config(text='Need to place a shooter')
+                return
+            # add the special loading screen
+            self.results_screen('path')
+
+        calculate_button = self.__button(input_frame, 'Calculate xG', lambda: attempt_calculate())
         calculate_button.pack(fill='x', pady=(0, 14))
 
 
