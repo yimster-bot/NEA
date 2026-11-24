@@ -87,7 +87,7 @@ class Pitch:
                 self.__canvas.delete(item)
                 return
 
-    def clear_role(self, pixel_x, pixel_y):
+    def clear_role(self, role):
         self.__canvas.delete(role)
 
     def clear_canvas(self):

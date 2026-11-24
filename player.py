@@ -28,7 +28,14 @@ class Player:
         self.__real_y = y
 
     def convert_coordinates(self, canvas_width, canvas_height, pitch_length, pitch_width):
-        pass
+        scale = canvas_width / pitch_width
+        margin = canvas_height - (pitch_length/2)*scale
+        self.__real_x = pitch_length - (self.__pixel_x - margin)/scale
+        self.__real_y = self.__pixel_x/scale
 
     def within_bounds(self, pitch_length, pitch_width):
-        pass
+        return pitch_length/2 <= self.__real_x <= pitch_length and 0<=self.__real_y <= pitch_width
+
+    def to_dict(self):
+        return {'role': self.__role, 'pixel_x': self.__pixel_x, 'pixel_y': self.__pixel_y,
+                'real_x': self.__real_x, 'real_y': self.__real_y}

@@ -5,6 +5,8 @@ from tkinter import ttk
 from user import User
 from pitch import Pitch
 from defenders import Defender_Render
+from player import Player
+from simulation_input import Simulation_Input
 from xg_model import xG_Model
 from feature_calculation import Feature_Calculation
 from db_setup import get_connection, find_user, add_user, check_email_exist, recent_sims, all_sims
@@ -552,10 +554,43 @@ class Application:
 
 
     def new_simulation_screen(self):
+        # Sets frame for screen and clears all widgets from the screen
         self.clear_container()
+
+        popped = False
+        popup = None
+
+        def toggle_popup():
+            nonlocal popped, popup
+            if popped and popup.winfo_exists():
+                popup.destroy()
+            else:
+                popped = True
+                root = self.__container.winfo_toplevel()
+                popup = tk.Toplevel(root, bg=self.__colour1)
+                popup.title("Help")
+                popup.transient(root)
+                popup.attributes("-topmost", True)
+
+                # Position it directly below the '?' button (help_label)
+                x = help_label.winfo_rootx() - 260
+                y = help_label.winfo_rooty() + help_label.winfo_height() + 5
+                popup.geometry(f"300x160+{x}+{y}")
+
+                label = tk.Label(popup, text='To place players, click the desired position and place them on the pitch by clicking. To place a shooter or deliverer, click the attacker already placed on the pitch. To delete players, click the player on the pitch again.',
+                                 wraplength=260,
+                                 justify='left',
+                                 bg = self.__colour1,
+                                 fg = 'black'
+                                 )
+                label.pack(pady=15, padx=15)
+
+
+        # create heading container
         heading = tk.Frame(self.__container, bg=self.__colour1)
         heading.pack(fill='x', padx=15)
 
+        #making labels for the heading for navigation and help
         icon_label = tk.Label(heading, text='⌂', font=(self.__font, 20), bg=self.__colour1,
                               fg=self.__colour2, width=2, cursor=self.__hand)
         icon_label.pack(side='left', anchor='nw', padx=(8, 10), pady=5)
@@ -570,6 +605,7 @@ class Application:
         help_label = tk.Label(heading, text='?', font=(self.__font, 18), bg=self.__colour1,
                               fg=self.__colour2, width=2, cursor=self.__hand)
         help_label.pack(side='right', anchor='e', padx=(8,10), pady=8)
+        help_label.bind('<Button-1>', lambda event: toggle_popup())
         help_label.bind('<Enter>', lambda event: help_label.configure(bg=self.__border))
         help_label.bind('<Leave>', lambda event: help_label.configure(bg=self.__colour1))
 
@@ -577,20 +613,9 @@ class Application:
         main_content.pack(fill='x', padx=15)
         main_content.columnconfigure((0,1), weight=1)
 
-        canvas = self.__pitch.create_canvas(main_content)
-        canvas.grid(row=0, column=0, sticky='nw', pady=5)
-        self.__pitch.draw_pitch()
-        margin = self.__pitch.get_margin()
-        canvas.bind('<Button-1>', on_canvas_click)
-
-
-        roles = [('Attacker', 'red'), ('Goalkeeper', 'grey'), ('Shooter', 'yellow'), ('Deliverer', 'blue')]
-        attacker_pos = []
-        single_pos = {'Goalkeeper': None, 'Shooter': None, 'Deliverer': None}
-
         def update_defenders(chosen_shape=None):
             shape = defender_configuration.get()
-            if shape=='Select option':
+            if shape == 'Select option':
                 return
             self.__renderer = Defender_Render(self.__pitch, shape)
             markable = attacker_pos + ([single_pos['Shooter']] if single_pos['Shooter'] else [])
@@ -609,8 +634,8 @@ class Application:
             role = active_role[0]
             x, y = event.x, event.y
 
-            if role=='Attacker':
-                if len(attacker_pos)>10:
+            if role == 'Attacker':
+                if len(attacker_pos) > 10:
                     return
                 attacker_pos.append((x, y))
             else:
@@ -621,6 +646,17 @@ class Application:
             update_defenders()
 
             print(f'{role} placed at: {x}, {y}')
+
+        canvas = self.__pitch.create_canvas(main_content)
+        canvas.grid(row=0, column=0, sticky='nw', pady=5)
+        self.__pitch.draw_pitch()
+        margin = self.__pitch.get_margin()
+        canvas.bind('<Button-1>', on_canvas_click)
+
+
+        roles = [('Attacker', 'red'), ('Goalkeeper', 'grey'), ('Shooter', 'yellow'), ('Deliverer', 'blue')]
+        attacker_pos = []
+        single_pos = {'Goalkeeper': None, 'Shooter': None, 'Deliverer': None}
 
         active_role = None
         role_boxes = {}
@@ -640,9 +676,9 @@ class Application:
 
                 active_role = (role, colour)
                 active_box = role_boxes[role]
-                active_box.configure(bg=self.__colour2, highlightbackground=self.__colour2, highlightthickness=2)
+                active_box.configure(bg=self.__border, highlightbackground=self.__border, highlightthickness=2)
                 for child in active_box.winfo_children():
-                    child.configure(bg=self.__colour2)
+                    child.configure(bg=self.__border)
 
 
         for column, (role, colour) in enumerate(roles):
@@ -677,12 +713,12 @@ class Application:
         tk.Label(input_frame, text='Defender configuration', font=(self.__font, 11, 'bold'), bg=self.__colour1,
                  fg=self.__text, anchor='w').pack(fill='x', padx=20, pady=(0, 2))
         d_configs = ['Zonal', 'Man marking', 'Mixed', 'No defense']
-        defender_configuration = self.__dropdown(input_frame, d_configs)
+        defender_configuration = self.__dropdown(input_frame, d_configs, command= update_defenders)
         defender_configuration.pack(fill='x', padx=20, pady=(0, 12))
 
         tk.Label(input_frame, text='Delivery type', font=(self.__font, 11, 'bold'), bg=self.__colour1,
                  fg=self.__text, anchor='w').pack(fill='x', padx=20, pady=(0, 2))
-        del_types = ['Inswinging', 'Outswinging', 'Straight', 'Through ball']
+        del_types = ['Inswinging', 'Outswinging', 'Straight', 'Through ball', 'No delivery']
         delivery_type = self.__dropdown(input_frame, del_types)
         delivery_type.pack(fill='x', padx=20, pady=(0, 12))
 
@@ -691,17 +727,33 @@ class Application:
         error_label.pack(fill='x', pady=(0, 8))
 
         def attempt_calculate():
-            event = event_type.get()
-            defender = defender_configuration.get()
-            delivery = delivery_type.get()
+            # turns a placed position into a Player object, or None if that player hasn't been placed
+            def make_player(position, role):
+                if position is None:
+                    return None
+                return Player(position[0], position[1], role)
 
-            if event=='Select option' or defender=='Select option' or delivery=='Select option':
-                error_label.config(text='Fields cannot be empty')
+            shooter = make_player(single_pos['Shooter'], 'Shooter')
+            deliverer = make_player(single_pos['Deliverer'], 'Deliverer')
+            goalkeeper = make_player(single_pos['Goalkeeper'], 'Goalkeeper')
+            attackers = [Player(x, y, 'Attacker') for x, y in attacker_pos]
+
+            # converts every placed player from canvas pixels into real pitch metres
+            for player in [shooter, deliverer, goalkeeper] + attackers:
+                if player is not None:
+                    player.convert_coordinates(self.__pitch.get_canvas_width(), self.__pitch.get_canvas_height(),
+                                               self.__pitch.get_pitch_length(), self.__pitch.get_pitch_width())
+
+            simulation = Simulation_Input(event_type.get(), delivery_type.get(), defender_configuration.get(),
+                                          shooter, deliverer, goalkeeper, attackers)
+            simulation.check_direct()
+            problem = simulation.validate(self.__pitch.get_pitch_length(), self.__pitch.get_pitch_width())
+            if problem:
+                error_label.config(text=problem)
                 return
-            if single_pos['Shooter'] is None:
-                error_label.config(text='Need to place a shooter')
-                return
-            # add the special loading screen
+
+            error_label.config(text='')
+            self.__simulation = simulation
             self.results_screen('path')
 
         calculate_button = self.__button(input_frame, 'Calculate xG', lambda: attempt_calculate())

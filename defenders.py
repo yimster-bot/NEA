@@ -13,9 +13,9 @@ class Defender_Render:
         if self.__defender_shape == 'Zonal':
             self.render_zonal()
         if self.__defender_shape == 'Man marking':
-            self.render_man_marking()
+            self.render_man_marking(attacker_positions)
         if self.__defender_shape == 'Mixed':
-            self.render_mixed()
+            self.render_mixed(attacker_positions)
         if self.__defender_shape == 'No defense':
             self.__pitch.clear_role('Defender')
 
